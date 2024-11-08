@@ -42,7 +42,7 @@ public class LoggingAspect {
     /**
      * Pointcut that matches all Spring beans in the application's main packages.
      */
-    @Pointcut("within(sds.easywrite.repositories..*)" + " || within(sds.easywrite.service..*)" + " || within(sds.easywrite.web.rest..*)")
+    @Pointcut("within(sds.easywrite.repositories..*)" + " || within(sds.easywrite.services..*)" + " || within(sds.easywrite.controllers..*)")
     public void applicationPackagePointcut() {
         // Method is empty as this is just a Pointcut, the implementations are in the advices.
     }

@@ -1,6 +1,6 @@
-import {Component, inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {Component, inject, OnDestroy, OnInit, signal, TemplateRef} from '@angular/core';
 import {Router, RouterModule} from '@angular/router';
-import {Subject} from 'rxjs';
+import {debounceTime, Subject, switchMap} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
 
 import SharedModule from 'app/shared/shared.module';
@@ -8,15 +8,42 @@ import {AccountService} from 'app/core/auth/account.service';
 import {Account} from 'app/core/auth/account.model';
 import {CKEditorModule} from '@ckeditor/ckeditor5-angular';
 import * as eee from 'ckeditor5';
+import {HomeService} from "./home.service";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
+import {DocumentModel} from "../model/DocumentModel";
+import {SafeHtmlPipe} from "../shared/directive/pipe-html";
+import {ElasticSearchItem} from "../model/ElasticSearchItem";
+
 // import { SlashCommand } from 'ckeditor5-premium-features';
 // import * as ClassicEditorBuild from '@ckeditor/ckeditor5-build-classic';
-
+import {BrowserModule, DomSanitizer, SafeHtml} from '@angular/platform-browser';
+import {OrderBySpecificKeyPipe} from "../shared/directive/order-by-key-pipe";
+import {ToastModule} from "primeng/toast";
+import {MessageService} from "primeng/api";
+import {InputGroupModule} from 'primeng/inputgroup';
+import {InputGroupAddonModule} from 'primeng/inputgroupaddon';
+import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {ButtonModule} from "primeng/button";
+import {RippleModule} from "primeng/ripple";
+import {ToastService} from "../shared/toast/ToastService";
 @Component({
   standalone: true,
   selector: 'jhi-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
-  imports: [SharedModule, RouterModule, CKEditorModule],
+  imports: [
+    SharedModule,
+    RouterModule,
+    CKEditorModule,
+    ReactiveFormsModule,
+    FormsModule,
+    SafeHtmlPipe,
+    OrderBySpecificKeyPipe,
+    ToastModule,
+    RippleModule,
+    ButtonModule
+  ],
+  providers: [MessageService]
 })
 export default class HomeComponent implements OnInit, OnDestroy {
   title = 'angular';
@@ -139,19 +166,48 @@ export default class HomeComponent implements OnInit, OnDestroy {
     //     Mention configuration
     // }
   };
-
+  keyword = '';
   account = signal<Account | null>(null);
+  documentSelected: DocumentModel = new DocumentModel();
+  contentSelected = '';
+  contentChanged = '';
+  searchResults: ElasticSearchItem<any>[] = [];
+  isDisableSaveContent = true;
+  toastService = inject(ToastService);
 
+  private keywordSubject = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
-
   private readonly accountService = inject(AccountService);
   private readonly router = inject(Router);
 
+  constructor(
+    private homeService: HomeService,
+    private sanitizer: DomSanitizer,
+    private messageService: MessageService
+  ) {
+  }
+
   ngOnInit(): void {
+    this.messageService.add({severity: 'success', summary: 'Success', detail: 'Message Content'});
     this.accountService
       .getAuthenticationState()
       .pipe(takeUntil(this.destroy$))
       .subscribe(account => this.account.set(account));
+
+    // Subscribe to keywordSubject with a debounce and API call
+    this.keywordSubject.pipe(
+      debounceTime(500), // wait for 500ms pause in input
+      switchMap(keyword => this.homeService.getAll(keyword))
+    ).subscribe({
+      next: (result) => {
+        this.searchResults = result.data;
+        // console.dir(result.data)
+        // this.documents = result.data; // Use arrow function
+      },
+      error: (error) => {
+        console.dir(error); // Use arrow function
+      },
+    });
   }
 
   login(): void {
@@ -161,5 +217,52 @@ export default class HomeComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+
+  onKeywordChange(): void {
+    // Emit new keyword to subject
+    if (this.keyword && this.keyword.length >= 3) {
+      this.keywordSubject.next(this.keyword);
+    } else {
+      this.searchResults = [];
+      this.contentSelected = '';
+    }
+  }
+
+  onLoadDocument(itemSelected: DocumentModel): void {
+    if (itemSelected.content) {
+      this.contentSelected = itemSelected.content;
+      this.documentSelected = itemSelected;
+    }
+  }
+
+  transformHighlights(key: string, highlights: string[]): SafeHtml {
+    const combinedHighlights = highlights.join(' ... ') + ' ... ';
+    const formattedHighlights = key === 'title' ? `<b>${combinedHighlights}</b>` : combinedHighlights;
+    return this.sanitizer.bypassSecurityTrustHtml(formattedHighlights);
+  }
+
+  onSaveData(): void {
+    this.documentSelected.content = this.contentChanged;
+    this.homeService.save(this.documentSelected).subscribe(
+      {
+        next: (result) => {
+          window.alert('Success');
+        },
+        error: (error) => {
+          console.dir(error); // Use arrow function
+        },
+      }
+    )
+  }
+
+  onContentChange(value: string): void {
+    this.contentChanged = value;
+    if (this.contentSelected !== value) {
+      setTimeout(() => {
+        this.isDisableSaveContent = false;
+      }, 0)
+    }
   }
 }

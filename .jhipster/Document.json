@@ -1,0 +1,27 @@
+{
+  "annotations": {
+    "changelogDate": "20241031094113"
+  },
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "author_id",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "content",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "parent_id",
+      "fieldType": "Integer"
+    }
+  ],
+  "jpaMetamodelFiltering": false,
+  "name": "Document",
+  "pagination": "no",
+  "readOnly": false,
+  "relationships": [],
+  "searchEngine": "no",
+  "service": "serviceImpl"
+}

@@ -93,6 +93,11 @@ management:
 spring:
   application:
     name: easywritehub
+  elasticsearch:
+    uris: http://10.100.170.56:9200/
+    username: elastic
+    password: q1F49wqkR6EWeK8NoNNj
+    connection-timeout: 60s
   docker:
     compose:
       enabled: true

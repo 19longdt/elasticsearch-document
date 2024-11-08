@@ -1,0 +1,42 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (document(); as documentRef) {
+      <div>
+        <h2 data-cy="documentDetailsHeading"><span jhiTranslate="easywritehubApp.document.detail.title">DocumentModel</span></h2>
+
+        <hr />
+
+        <jhi-alert-error></jhi-alert-error>
+
+        <jhi-alert></jhi-alert>
+
+        <dl class="row-md jh-entity-details">
+          <dt><span jhiTranslate="global.field.id">ID</span></dt>
+          <dd>
+            <span>{{ documentRef.id }}</span>
+          </dd>
+          <dt><span jhiTranslate="easywritehubApp.document.author_id">Author Id</span></dt>
+          <dd>
+            <span>{{ documentRef.author_id }}</span>
+          </dd>
+          <dt><span jhiTranslate="easywritehubApp.document.content">Content</span></dt>
+          <dd>
+            <span>{{ documentRef.content }}</span>
+          </dd>
+          <dt><span jhiTranslate="easywritehubApp.document.parent_id">Parent Id</span></dt>
+          <dd>
+            <span>{{ documentRef.parent_id }}</span>
+          </dd>
+        </dl>
+
+        <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Back</span>
+        </button>
+
+        <button type="button" [routerLink]="['/document', documentRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Edit</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

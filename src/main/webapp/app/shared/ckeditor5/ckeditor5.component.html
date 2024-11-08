@@ -13,11 +13,11 @@
 <!--    </div>-->
 <!--  </div>-->
 <!--</div>-->
+<!--<p>{{ document | json }}</p>-->
 <ckeditor
   [editor]="Editor"
   [config]="config"
-  [data]="editorContent"
+  [data]="contentSelected"
   (change)="onChange($event)"
 >
-
 </ckeditor>

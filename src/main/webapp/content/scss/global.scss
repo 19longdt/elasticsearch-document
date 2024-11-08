@@ -2,6 +2,19 @@
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 
+.block-center {
+  display: flex;
+  justify-content: space-between;
+  text-align: center;
+  align-items: center;
+}
+
+// elastic highlight text
+.highlight {
+  background-color: yellow;
+  font-style: italic;
+}
+
 /* ==============================================================
 Bootstrap tweaks
 ===============================================================*/
