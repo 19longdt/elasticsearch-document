@@ -42,4 +42,14 @@ public class ElasticDocument {
     public void setContent(String content) {
         this.content = content;
     }
+
+    @Override
+    public String toString() {
+        return "ElasticDocument{" +
+            "id='" + id + '\'' +
+            ", type='" + type + '\'' +
+            ", title='" + title + '\'' +
+            ", content='" + content + '\'' +
+            '}';
+    }
 }

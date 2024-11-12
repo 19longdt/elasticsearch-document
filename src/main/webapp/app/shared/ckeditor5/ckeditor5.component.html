@@ -14,10 +14,56 @@
 <!--  </div>-->
 <!--</div>-->
 <!--<p>{{ document | json }}</p>-->
-<ckeditor
-  [editor]="Editor"
-  [config]="config"
-  [data]="contentSelected"
-  (change)="onChange($event)"
->
-</ckeditor>
+<div class="block-center mb-2">
+  <div>
+    <span>Edit your document</span>
+  </div>
+  <div>
+    <button
+      *ngIf="documentSelected.id"
+      type="submit"
+      class="btn btn-outline-info p-1"
+      data-cy="submit"
+      [disabled]="!documentSelected.id"
+      (click)="onEditData()"
+    >
+      <span>{{ this.documentSelected.isEditing ? 'Cancel' : 'Edit' }}</span>
+    </button>
+    <button
+      type="submit"
+      class="btn btn-outline-success p-1"
+      data-cy="submit"
+      [disabled]="documentSelected.id && !documentSelected.isEditing"
+      (click)="onSaveData()"
+    >
+      <span>{{ !documentSelected.id ? 'Add new' : 'Update' }}</span>
+    </button>
+  </div>
+</div>
+
+<div class="block-center mb-2">
+  <div class="col-2"><span>Enter Title: </span></div>
+  <div class="col-10">
+    <input
+      type="text"
+      class="form-control"
+      [ngClass]="inputHighLightClass"
+      [readOnly]="documentSelected.id && !documentSelected.isEditing"
+      [(ngModel)]="documentSelected.title"
+      (ngModelChange)="onInputChange()"
+    />
+  </div>
+</div>
+<div [ngClass]="inputHighLightClass">
+  <ckeditor
+    [editor]="Editor"
+    [config]="config"
+    [data]="documentSelected.content ? documentSelected.content : ''"
+    (change)="onContentChange($event)"
+    (ready)="onReady($event)"
+  >
+  </ckeditor>
+</div>
+
+
+<p class="fst-italic text-danger">{{ messageError }}</p>

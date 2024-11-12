@@ -76,6 +76,7 @@ spring:
     password:
   liquibase:
     contexts: prod
+    enabled: false
   mail:
     host: localhost
     port: 25

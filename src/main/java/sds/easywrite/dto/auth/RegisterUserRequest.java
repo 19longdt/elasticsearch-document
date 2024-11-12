@@ -1,7 +1,8 @@
 package sds.easywrite.dto.auth;
 
 import java.io.Serializable;
-import javax.validation.constraints.NotBlank;
+
+import jakarta.validation.constraints.NotBlank;
 import sds.easywrite.constants.messages.ExceptionMessages;
 
 public class RegisterUserRequest implements Serializable {

@@ -2,8 +2,9 @@ package sds.easywrite.utils;
 
 import java.util.HashSet;
 import java.util.Set;
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import sds.easywrite.constants.messages.ExceptionMessages;
 import sds.easywrite.dto.errors.RequestAlertException;
 

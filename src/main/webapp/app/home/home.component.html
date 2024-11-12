@@ -32,26 +32,10 @@
     </div>
 
     <br/>
-    <div class="block-center mb-2">
-      <div>
-        <span>Edit your document</span>
-      </div>
-      <div>
-        <button
-          type="submit"
-          class="btn btn-outline-primary p-1"
-          data-cy="submit"
-          [disabled]="isDisableSaveContent"
-          (click)="onSaveData()"
-        >
-          Save
-        </button>
-      </div>
-    </div>
 
-    <span class="fw-bold">{{documentSelected ? documentSelected.title : ''}}</span>
+<!--    <span class="fw-bold">{{documentSelected ? documentSelected.title : ''}}</span>-->
 
-    <jhi-ckeditor5 (contentOut)="onContentChange($event)" [contentSelected]="contentSelected"></jhi-ckeditor5>
+    <jhi-ckeditor5 (contentOut)="onContentChange($event)" [documentSelected]="documentSelected"></jhi-ckeditor5>
 
     <!--    @if (!documents) {-->
     <!--      <i>opps! result empty! :(</i>-->

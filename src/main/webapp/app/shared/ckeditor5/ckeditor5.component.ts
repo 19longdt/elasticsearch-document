@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, Output, SimpleChanges} from '@angular/core';
 import {ChangeEvent, CKEditorModule} from '@ckeditor/ckeditor5-angular';
 
 import {
@@ -10,7 +10,8 @@ import {
   Autosave,
   BalloonToolbar,
   BlockQuote,
-  Bold, ClassicEditor,
+  Bold,
+  ClassicEditor,
   CloudServices,
   Code,
   CodeBlock,
@@ -43,10 +44,8 @@ import {
   LinkImage,
   List,
   ListProperties,
-  Markdown,
   MediaEmbed,
   Mention,
-  Minimap,
   PageBreak,
   Paragraph,
   PasteFromMarkdownExperimental,
@@ -78,19 +77,11 @@ import {
   Undo,
   Base64UploadAdapter
 } from 'ckeditor5';
-import {DomSanitizer} from "@angular/platform-browser";
 import {FormsModule} from "@angular/forms";
 import {DocumentModel} from "../../model/DocumentModel";
-import {JsonPipe} from "@angular/common";
-const editorContent = `
-  <h1>Hello from CKEditor 5!</h1>
-  <h2>Check the inspector below</h2>
-  <ul>
-    <li>Check the Model</li>
-    <li>See the View</li>
-    <li>Check available commands</li>
-  </ul>
-`;
+import {CommonModule, JsonPipe, NgIf} from "@angular/common";
+import {HomeService} from "../../home/home.service";
+
 
 // import translations from 'ckeditor5/translations/vi.js';
 @Component({
@@ -99,7 +90,9 @@ const editorContent = `
   imports: [
     CKEditorModule,
     FormsModule,
-    JsonPipe
+    JsonPipe,
+    NgIf,
+    CommonModule
   ],
   templateUrl: './ckeditor5.component.html',
   styleUrl: './ckeditor5.component.scss'
@@ -351,51 +344,100 @@ export default class Ckeditor5Component {
     // },
     // translations: [translations],
     simpleUpload: {
-      uploadUrl: "http://localhost:8080/api/ckeditor/upload/image",
+      uploadUrl: "http://10.100.170.56:8080/api/ckeditor/upload/image",
       onUploadComplete: (response: any) => {
         console.log(response);
       },
     },
   };
-  @Input() contentSelected!: string;
+  @Input() documentSelected!: DocumentModel;
 
 
   editorContent = '';
   contentHtml: any;
   output: any;
-  constructor(private domSanitizer: DomSanitizer) {}
+  editorInstance: any;
+  inputHighLightClass = '';
+  messageError = '';
 
-  public onChange({ editor }: ChangeEvent) : void {
-    this.contentHtml = editor.getData();
-    this.contentOut.emit(this.contentHtml);
-    // console.log(this.contentHtml);
-    // this.output = this.domSanitizer.bypassSecurityTrustHtml(this.editorContent);
-    // console.log(this.output);
+  constructor(private homeService: HomeService) {
   }
 
-  // public onChange({editor}: ChangeEvent): void {
-  //   this.contentHtml = editor.getData();
-  //   const root = editor.model.document.getRoot();
-  //   if (root) {
-  //     const firstChild = root.getChild(0);
-  //
-  //     // Kiểm tra nếu `firstChild` là một `Element`
-  //     if (firstChild instanceof Element) {
-  //       const imageElements = Array.from(firstChild.getChildren())
-  //         .filter((item: any) => item.is && item.is('image'));
-  //
-  //       // Duyệt qua các thẻ ảnh đã upload
-  //       imageElements.forEach((image: any) => {
-  //         const imageUrl = image.getAttribute('src'); // URL ảnh
-  //         console.log('Uploaded Image URL:', imageUrl);
-  //       });
-  //     }
-  //   }
-  //
-  //   // Sanitizing và xuất nội dung HTML
-  //   this.output = this.domSanitizer.bypassSecurityTrustHtml(this.contentHtml);
-  //   console.log(this.output);
-  // }
+  onInputChange(): void {
+    if (this.documentSelected.title) {
+      this.messageError = '';
+    }
+  }
+
+  public onContentChange({editor}: ChangeEvent): void {
+    this.contentHtml = editor.getData();
+    if (this.contentHtml) {
+      this.messageError = '';
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // documentSelected đã thay đổi, bật chế độ readonly cho editor
+    if (this.editorInstance && this.documentSelected.id && !this.documentSelected.isEditing) {
+      this.editorInstance.enableReadOnlyMode('readonly-id');
+    } else {
+      this.editorInstance.disableReadOnlyMode('readonly-id');
+    }
+  }
+
+  // Lưu instance của editor khi sẵn sàng
+  public onReady(editor: any): void {
+    this.editorInstance = editor;
+  }
+
+  onSaveData(): void {
+    this.documentSelected.content = this.contentHtml;
+    let mess = '';
+    if (!this.documentSelected.title) {
+      mess += 'title';
+    }
+    if (!this.documentSelected.content) {
+      mess += ', content';
+    }
+
+    if (mess !== '') {
+      this.inputHighLightClass = 'input-highlight-error';
+      this.messageError = 'opps ' + mess + ' empty!';
+      setTimeout(() => {
+        this.inputHighLightClass = '';
+      }, 700);
+      return;
+    }
+    this.homeService.save(this.documentSelected).subscribe(
+      {
+        next: (result) => {
+          window.alert('Success');
+          this.editorInstance.disableReadOnlyMode('readonly-id');
+          this.documentSelected = new DocumentModel();
+        },
+        error: (error) => {
+          console.dir(error); // Use arrow function
+        },
+      }
+    )
+  }
+
+  onEditData(): void {
+    if (this.documentSelected.id) {
+      this.documentSelected.isEditing = !this.documentSelected.isEditing;
+      if (!this.documentSelected.isEditing) {
+        this.editorInstance.enableReadOnlyMode('readonly-id');
+      } else {
+        this.inputHighLightClass = 'input-highlight';
+        setTimeout(() => {
+          this.inputHighLightClass = '';
+        }, 700);
+        this.editorInstance.disableReadOnlyMode('readonly-id');
+      }
+    } else if (this.documentSelected.isEditing) {
+      this.editorInstance.disableReadOnlyMode('readonly-id');
+    }
+  }
 }
 
 

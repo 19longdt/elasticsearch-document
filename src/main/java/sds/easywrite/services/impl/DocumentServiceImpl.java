@@ -1,5 +1,7 @@
 package sds.easywrite.services.impl;
 
+import co.elastic.apm.api.CaptureSpan;
+import co.elastic.apm.api.CaptureTransaction;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import com.google.common.base.Strings;
 import org.springframework.beans.BeanUtils;
@@ -51,6 +53,7 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     public ResultDTO save(ElasticDocument request) {
+//        System.out.println(request.toString());
         if (request.getId() == null) {
             ElasticDocument elasticDocument = new ElasticDocument();
             Document document = new Document();
@@ -59,7 +62,7 @@ public class DocumentServiceImpl implements DocumentService {
             elasticDocument.setId(null);
             ElasticDocument savedDocument = elasticDocumentRepository.save(elasticDocument);
             String elasticId = savedDocument.getId();
-
+            BeanUtils.copyProperties(request, document);
             document.setId(null);
             document.setRefElasticId(elasticId);
             documentRepository.save(document);
@@ -83,55 +86,61 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     @Transactional(readOnly = true)
+    @CaptureTransaction(value = "TransactionName")
     public ResultDTO getAll(String keyword) {
-        Object result = null;
+        Object result;
         if (!Strings.isNullOrEmpty(keyword)) {
-            HighlightParameters parameters = HighlightParameters
-                .builder()
-                .withPreTags("<span class=\"highlight\">")
-                .withPostTags("</span>")
-                .withFragmentSize(50)
-                .withNumberOfFragments(3)
-                .build();
-
-
-            HighlightQuery highlightQuery = new HighlightQuery(
-                new Highlight(
-                    parameters,
-                    List.of(
-                        new HighlightField("type"),
-                        new HighlightField("title"),
-                        new HighlightField("content")
-                    )
-                ),
-                String.class
-            );
-            Query query = NativeQuery.builder()
-                .withQuery(q -> q
-                    .multiMatch(m -> m
-                        .fields("title", "type", "content")
-                        .query(keyword)
-                    )
-                )
-                .withHighlightQuery(highlightQuery)
-//                .withSort(Sort.by("type").descending().and(Sort.by("title").ascending()))
-                .build();
-
-            SearchHits<ElasticDocument> searchHits = elasticsearchTemplate.search(query, ElasticDocument.class);
-            List<ElasticSearchItemResult<ElasticDocument>> response = new ArrayList<>();
-            for (SearchHit<ElasticDocument> hit : searchHits) {
-                ElasticDocument document = hit.getContent();
-                float score = hit.getScore();
-                String id = hit.getId();
-                Map<String, List<String>> highlights = hit.getHighlightFields();
-
-                response.add(new ElasticSearchItemResult<>(id, document, score, highlights));
-            }
-            result = response;
+            result = getDataFromElastic(keyword);
         } else {
             result = documentRepository.findAll();
         }
         return new ResultDTO(SUCCESS, SUCCESS_GET_LIST, true, result);
+    }
+
+    @CaptureSpan(value = "spanName", type = "ext", subtype = "http")
+    private Object getDataFromElastic(String keyword) {
+        HighlightParameters parameters = HighlightParameters
+            .builder()
+            .withPreTags("<span class=\"highlight\">")
+            .withPostTags("</span>")
+            .withFragmentSize(50)
+            .withNumberOfFragments(3)
+            .build();
+
+
+        HighlightQuery highlightQuery = new HighlightQuery(
+            new Highlight(
+                parameters,
+                List.of(
+                    new HighlightField("type"),
+                    new HighlightField("title"),
+                    new HighlightField("content")
+                )
+            ),
+            String.class
+        );
+        Query query = NativeQuery.builder()
+            .withQuery(q -> q
+                .multiMatch(m -> m
+                    .fields("title", "type", "content")
+                    .query(keyword)
+                )
+            )
+            .withHighlightQuery(highlightQuery)
+//                .withSort(Sort.by("type").descending().and(Sort.by("title").ascending()))
+            .build();
+
+        SearchHits<ElasticDocument> searchHits = elasticsearchTemplate.search(query, ElasticDocument.class);
+        List<ElasticSearchItemResult<ElasticDocument>> response = new ArrayList<>();
+        for (SearchHit<ElasticDocument> hit : searchHits) {
+            ElasticDocument document = hit.getContent();
+            float score = hit.getScore();
+            String id = hit.getId();
+            Map<String, List<String>> highlights = hit.getHighlightFields();
+
+            response.add(new ElasticSearchItemResult<>(id, document, score, highlights));
+        }
+        return response;
     }
 
     @Override

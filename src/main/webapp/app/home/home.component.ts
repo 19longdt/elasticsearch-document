@@ -169,11 +169,9 @@ export default class HomeComponent implements OnInit, OnDestroy {
   keyword = '';
   account = signal<Account | null>(null);
   documentSelected: DocumentModel = new DocumentModel();
-  contentSelected = '';
   contentChanged = '';
   searchResults: ElasticSearchItem<any>[] = [];
   isDisableSaveContent = true;
-  toastService = inject(ToastService);
 
   private keywordSubject = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
@@ -226,14 +224,14 @@ export default class HomeComponent implements OnInit, OnDestroy {
       this.keywordSubject.next(this.keyword);
     } else {
       this.searchResults = [];
-      this.contentSelected = '';
+      this.documentSelected = new DocumentModel();
     }
   }
 
   onLoadDocument(itemSelected: DocumentModel): void {
     if (itemSelected.content) {
-      this.contentSelected = itemSelected.content;
       this.documentSelected = itemSelected;
+      this.documentSelected.isEditing = false;
     }
   }
 
@@ -259,10 +257,10 @@ export default class HomeComponent implements OnInit, OnDestroy {
 
   onContentChange(value: string): void {
     this.contentChanged = value;
-    if (this.contentSelected !== value) {
-      setTimeout(() => {
-        this.isDisableSaveContent = false;
-      }, 0)
-    }
+  }
+
+  onEditData(): void {
+    this.documentSelected = JSON.parse(JSON.stringify(this.documentSelected));
+    this.documentSelected.isEditing = true
   }
 }

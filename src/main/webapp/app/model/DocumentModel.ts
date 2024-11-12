@@ -3,4 +3,5 @@ export class DocumentModel {
   title!: string | null;
   type!: string | null;
   content!: string | null;
+  isEditing?: boolean;
 }

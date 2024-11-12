@@ -1,7 +1,8 @@
 package sds.easywrite.dto.auth;
 
 import java.io.Serializable;
-import javax.validation.constraints.NotEmpty;
+
+import jakarta.validation.constraints.NotEmpty;
 import sds.easywrite.constants.messages.ExceptionMessages;
 
 public class LoginVM implements Serializable {
